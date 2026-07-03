@@ -1,0 +1,15 @@
+# Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Secrets
+.env
+
+# PyCharm/IDE configs
+.idea/
+
+# Python cache
+__pycache__/
+*.pyc
