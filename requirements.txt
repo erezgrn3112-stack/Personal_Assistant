@@ -1,0 +1,9 @@
+streamlit
+python-dotenv
+langchain-core
+langchain-groq
+langchain-mcp-adapters
+langgraph
+mcp
+twilio
+typing_extensions
