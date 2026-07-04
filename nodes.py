@@ -28,8 +28,10 @@ def _format_state_context(state: AgentState) -> str:
 
 
 def _sync_state_from_tool_messages(state: AgentState) -> dict:
-    """Parse latest tool outputs back into state slots."""
+    """Parse recent tool outputs back into state slots without breaking prematurely."""
     updates: dict = {}
+
+    # Scan messages in reverse to fetch the latest state updates accurately
     for msg in reversed(state.get("messages", [])):
         if not isinstance(msg, ToolMessage):
             continue
@@ -41,20 +43,27 @@ def _sync_state_from_tool_messages(state: AgentState) -> dict:
             continue
 
         status = payload.get("status")
+
+        # 1. Sync booking status slots
         if status == "success" and payload.get("booked") is True:
             updates.setdefault("booking_success", True)
             updates.setdefault("booking_day", payload.get("day"))
             updates.setdefault("booking_hour", payload.get("hour"))
+
+        # 2. Sync restaurant search results
         elif status == "success" and "data" in payload:
             updates.setdefault("presented_options", payload["data"])
+
+        # 3. Sync contact search details safely without dropping keys
         elif status == "success" and "phone" in payload:
-            updates.setdefault("contact_phone", payload["phone"])
-            updates.setdefault(
-                "person_name", payload.get("name") or state.get("person_name")
-            )
+            if "contact_phone" not in updates:
+                updates["contact_phone"] = payload["phone"]
+            if "person_name" not in updates:
+                updates["person_name"] = payload.get("name") or state.get("person_name")
+
+        # 4. Sync WhatsApp delivery status
         elif status == "success" and "sid" in payload:
             updates.setdefault("whatsapp_sent", True)
-        break
 
     return updates
 
